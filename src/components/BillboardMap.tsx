@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, DollarSign, Eye, Maximize } from 'lucide-react';
+import { MapPin, IndianRupee, Eye, Maximize } from 'lucide-react';
 
 // Fix Leaflet default icon issue
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -137,8 +137,8 @@ export function BillboardMap() {
                   
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      <strong>${billboard.price_per_month.toLocaleString()}</strong>/mo
+                      <IndianRupee className="h-4 w-4 text-primary" />
+                      <strong>₹{billboard.price_per_month.toLocaleString()}</strong>/mo
                     </span>
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <Eye className="h-4 w-4" />

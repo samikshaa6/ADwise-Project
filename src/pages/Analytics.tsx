@@ -16,7 +16,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { TrendingUp, Eye, DollarSign, Target, Calendar, MapPin, FileCheck } from "lucide-react";
+import { TrendingUp, Eye, IndianRupee, Target, Calendar, MapPin, FileCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
@@ -175,7 +175,7 @@ const Analytics = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{profile?.role === 'owner' ? 'Total Revenue' : 'Total Spend'}</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{totalSpend.toLocaleString()}</div>

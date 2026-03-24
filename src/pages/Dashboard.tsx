@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, DollarSign, Calendar, TrendingUp, Plus } from 'lucide-react';
+import { MapPin, IndianRupee, Calendar, TrendingUp, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BillboardMap } from '@/components/BillboardMap';
 import { AIRecommendations } from '@/components/AIRecommendations';
@@ -125,9 +125,9 @@ const Dashboard = () => {
           />
           <StatCard
             title="Total Revenue"
-            value={`$${stats.totalRevenue?.toLocaleString() || 0}`}
+            value={`₹${stats.totalRevenue?.toLocaleString() || 0}`}
             description="Lifetime earnings"
-            icon={DollarSign}
+            icon={IndianRupee}
             onClick={() => navigate('/analytics')}
           />
         </div>
@@ -151,7 +151,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${booking.total_cost}</p>
+                      <p className="font-medium">₹{booking.total_cost}</p>
                       <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
                         {booking.status}
                       </Badge>
@@ -185,9 +185,9 @@ const Dashboard = () => {
         />
         <StatCard
           title="Total Spent"
-          value={`$${stats.totalSpent?.toLocaleString() || 0}`}
+          value={`₹${stats.totalSpent?.toLocaleString() || 0}`}
           description="Advertising investment"
-          icon={DollarSign}
+          icon={IndianRupee}
           onClick={() => navigate('/analytics')}
         />
       </div>
@@ -227,7 +227,7 @@ const Dashboard = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${booking.total_cost}</p>
+                    <p className="font-medium">₹{booking.total_cost}</p>
                     <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
                       {booking.status}
                     </Badge>

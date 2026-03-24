@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, DollarSign, Eye, Target, TrendingUp, Pause, Play, Settings, Trash2 } from "lucide-react";
+import { Plus, Calendar, IndianRupee, Eye, Target, TrendingUp, Pause, Play, Settings, Trash2 } from "lucide-react";
 import { CampaignForm } from "@/components/CampaignForm";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -242,7 +242,7 @@ const Campaigns = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">₹{totalBudget.toLocaleString()}</div>

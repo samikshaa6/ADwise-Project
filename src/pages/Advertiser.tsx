@@ -38,7 +38,7 @@ const Advertiser = () => {
       title: "Summer Sale Campaign launched",
       description: "Campaign started on Times Square Billboard",
       date: "2024-09-20",
-      amount: "$1,200"
+      amount: "₹1,200"
     },
     {
       id: 2,
@@ -46,7 +46,7 @@ const Advertiser = () => {
       title: "Payment processed",
       description: "Monthly billing for Q3 campaigns",
       date: "2024-09-15",
-      amount: "$3,450"
+      amount: "₹3,450"
     },
     {
       id: 3,
@@ -54,7 +54,7 @@ const Advertiser = () => {
       title: "Brand Awareness Campaign completed",
       description: "Campaign ended with 95% budget utilization",
       date: "2024-09-10",
-      amount: "$2,850"
+      amount: "₹2,850"
     },
     {
       id: 4,
@@ -62,7 +62,7 @@ const Advertiser = () => {
       title: "New billboard booked",
       description: "Reserved Downtown Financial District slot",
       date: "2024-09-08",
-      amount: "$680"
+      amount: "₹680"
     }
   ];
 
@@ -168,7 +168,7 @@ const Advertiser = () => {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${advertiserProfile.totalSpend.toLocaleString()}</div>
+            <div className="text-2xl font-bold">₹{advertiserProfile.totalSpend.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Lifetime advertising spend
             </p>
@@ -268,7 +268,7 @@ const Advertiser = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="font-semibold">${bill.amount.toLocaleString()}</p>
+                        <p className="font-semibold">₹{bill.amount.toLocaleString()}</p>
                         <Badge className="bg-success text-success-foreground text-xs">
                           {bill.status}
                         </Badge>

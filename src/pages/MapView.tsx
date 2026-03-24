@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Eye, DollarSign } from "lucide-react";
+import { MapPin, Eye, IndianRupee } from "lucide-react";
 
 const MapView = () => {
   const billboards = [
@@ -8,7 +8,7 @@ const MapView = () => {
       id: 1,
       title: "Times Square Digital Billboard",
       location: "Times Square, NYC",
-      price: "$500/day",
+      price: "₹500/day",
       impressions: "50K",
       status: "available",
       coordinates: { lat: 40.758, lng: -73.985 }
@@ -17,7 +17,7 @@ const MapView = () => {
       id: 2,
       title: "Sunset Strip Premium",
       location: "West Hollywood, CA",
-      price: "$800/day",
+      price: "₹800/day",
       impressions: "75K",
       status: "booked",
       coordinates: { lat: 34.090, lng: -118.385 }
@@ -26,7 +26,7 @@ const MapView = () => {
       id: 3,
       title: "Downtown Financial District",
       location: "Financial District, NYC",
-      price: "$350/day",
+      price: "₹350/day",
       impressions: "30K",
       status: "available",
       coordinates: { lat: 40.707, lng: -74.011 }
@@ -88,7 +88,7 @@ const MapView = () => {
                     <span>{billboard.impressions} daily</span>
                   </div>
                   <div className="flex items-center gap-1 font-semibold">
-                    <DollarSign className="h-4 w-4" />
+                    <IndianRupee className="h-4 w-4" />
                     <span>{billboard.price}</span>
                   </div>
                 </div>

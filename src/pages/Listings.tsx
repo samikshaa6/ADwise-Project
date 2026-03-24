@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, MapPin, Eye, DollarSign, Calendar } from "lucide-react";
+import { Search, Filter, MapPin, Eye, IndianRupee, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BookingForm } from "@/components/BookingForm";
@@ -201,8 +201,8 @@ const Listings = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <DollarSign className="h-5 w-5 text-primary" />
-                    <span className="text-xl font-bold text-primary">${billboard.price_per_month}</span>
+                    <IndianRupee className="h-5 w-5 text-primary" />
+                    <span className="text-xl font-bold text-primary">₹{billboard.price_per_month}</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
                   <Button 

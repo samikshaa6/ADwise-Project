@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, DollarSign, MapPin, User, FileText, Download, Image } from 'lucide-react';
+import { Calendar, IndianRupee, MapPin, User, FileText, Download, Image } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,7 @@ interface Booking {
     title: string;
     location: string;
     owner_id?: string;
+    price_per_month?: number;
   };
   customer?: {
     user_id: string;
@@ -268,14 +269,21 @@ This certificate is valid for the specified duration only.
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-lg">{booking.campaign_name}</CardTitle>
-                  <CardDescription className="flex items-center gap-4">
-                    <span className="flex items-center">
-                      <MapPin className="mr-1 h-3 w-3" />
-                      {booking.billboard?.title || 'Unknown Billboard'}
+                  <div className="flex justify-between items-center bg-muted/50 p-2 rounded text-sm">
+                    <span className="text-muted-foreground">Total Value:</span>
+                    <span className="font-semibold flex items-center">
+                    <IndianRupee className="mr-1 h-3 w-3" />
+                      {booking.total_cost || booking.billboard?.price_per_month || 'N/A'}
                     </span>
                     <span className="flex items-center">
                       <User className="mr-1 h-3 w-3" />
                       {booking.customer?.full_name || 'Unknown Customer'}
+                    </span>
+                  </div>
+                  <CardDescription className="flex items-center gap-4">
+                    <span className="flex items-center">
+                      <MapPin className="mr-1 h-3 w-3" />
+                      {booking.billboard?.title || 'Unknown Billboard'}
                     </span>
                   </CardDescription>
                 </div>
@@ -308,7 +316,7 @@ This certificate is valid for the specified duration only.
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center text-muted-foreground">
-                    <DollarSign className="mr-1 h-3 w-3" />
+                    <IndianRupee className="mr-1 h-3 w-3" />
                     Total Cost
                   </div>
                   <div className="font-medium">₹{booking.total_cost}</div>

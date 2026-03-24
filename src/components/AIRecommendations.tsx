@@ -240,7 +240,7 @@ export function AIRecommendations() {
 
                       <Button 
                         size="sm" 
-                        onClick={() => navigate(`/listings/${rec.billboard_id}`)}
+                        onClick={() => navigate(`/listings`)}
                       >
                         View Details
                       </Button>

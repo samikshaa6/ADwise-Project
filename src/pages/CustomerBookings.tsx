@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, DollarSign, MapPin, User, FileText, Clock, CreditCard, Loader2, Image } from 'lucide-react';
+import { Calendar, IndianRupee, MapPin, User, FileText, Clock, CreditCard, Loader2, Image } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -291,9 +291,9 @@ export default function CustomerBookings() {
                   <div className="font-medium">{format(new Date(booking.end_date), 'MMM dd, yyyy')}</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center text-muted-foreground">
-                    <DollarSign className="mr-1 h-3 w-3" />
-                    Total Cost
+                  <div className="flex items-center px-2 py-1 bg-primary/10 text-primary rounded text-sm font-medium">
+                    <IndianRupee className="mr-1 h-3 w-3" />
+                    {booking.total_cost.toLocaleString()}
                   </div>
                   <div className="font-medium">₹{booking.total_cost}</div>
                 </div>

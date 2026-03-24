@@ -18,7 +18,7 @@ const billboardSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   location: z.string().min(1, 'Location is required'),
   description: z.string().optional(),
-  category: z.string().min(1, 'Category is required'),
+  category: z.string().optional().default('Uncategorized'),
   width: z.coerce.number().min(1, 'Width must be at least 1 meter'),
   height: z.coerce.number().min(1, 'Height must be at least 1 meter'),
   price_per_month: z.coerce.number().min(1, 'Price must be at least ₹1'),
@@ -146,10 +146,16 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
         }
       }
 
-      // Fetch traffic data from TomTom API
-      const { data: trafficData, error: trafficError } = await supabase.functions.invoke('get-traffic-data', {
+      // Fetch traffic data from TomTom API with timeout
+      const trafficPromise = supabase.functions.invoke('get-traffic-data', {
         body: { latitude: data.latitude, longitude: data.longitude }
       });
+      
+      const trafficTimeout = new Promise<{data: any, error: any}>((resolve) => {
+        setTimeout(() => resolve({ data: null, error: new Error("Traffic data fetch timed out.") }), 8000);
+      });
+
+      const { data: trafficData, error: trafficError } = await Promise.race([trafficPromise, trafficTimeout]);
 
       if (trafficError) {
         console.error('Traffic data fetch error:', trafficError);
@@ -164,7 +170,7 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
 
       console.log('Traffic data received:', { trafficScore, dailyImpressions });
 
-      const { error } = await supabase.from('billboards').insert([{
+      const insertPromise = supabase.from('billboards').insert([{
         title: data.title,
         location: data.location,
         description: data.description,
@@ -179,6 +185,12 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
         owner_id: profile.user_id,
         image_url: uploadedImageUrl,
       }]);
+
+      const insertTimeout = new Promise<{error: any}>((resolve) => {
+        setTimeout(() => resolve({ error: new Error('Database connection timed out while saving billboard.') }), 8000);
+      });
+
+      const { error } = await Promise.race([insertPromise, insertTimeout]);
 
       if (error) {
         console.error('Billboard creation error:', error);
@@ -272,33 +284,7 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="F&B">Food & Beverage (F&B)</SelectItem>
-                      <SelectItem value="Tech">Technology</SelectItem>
-                      <SelectItem value="Travel">Travel</SelectItem>
-                      <SelectItem value="Education">Education</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="Retail">Retail</SelectItem>
-                      <SelectItem value="Real Estate">Real Estate</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Category selection has been disabled per user request */}
 
             {/* Billboard Image Upload */}
             <div className="space-y-2">

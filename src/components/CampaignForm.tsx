@@ -22,7 +22,7 @@ const campaignSchema = z.object({
   description: z.string().optional(),
   start_date: z.date(),
   end_date: z.date(),
-  total_budget: z.number().min(1, 'Budget must be at least $1'),
+  total_budget: z.number().min(1, 'Budget must be at least ₹1'),
 });
 
 type CampaignFormData = z.infer<typeof campaignSchema>;
@@ -132,11 +132,11 @@ export function CampaignForm({ open, onOpenChange, onSuccess }: CampaignFormProp
                 </div>
                 <div className="flex justify-between">
                   <span>Daily Cost:</span>
-                  <span>${(campaignData.total_budget / days).toFixed(2)}</span>
+                  <span>₹{(campaignData.total_budget / days).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total:</span>
-                  <span>${campaignData.total_budget}</span>
+                  <span>₹{campaignData.total_budget}</span>
                 </div>
               </div>
               
@@ -154,7 +154,7 @@ export function CampaignForm({ open, onOpenChange, onSuccess }: CampaignFormProp
                   Back
                 </Button>
                 <Button onClick={handlePayment} className="flex-1">
-                  Pay ${campaignData.total_budget}
+                  Pay ₹{campaignData.total_budget}
                 </Button>
               </div>
             </CardContent>
@@ -290,7 +290,7 @@ export function CampaignForm({ open, onOpenChange, onSuccess }: CampaignFormProp
               name="total_budget"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Budget ($)</FormLabel>
+                  <FormLabel>Total Budget (₹)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 

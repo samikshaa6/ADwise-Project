@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Plus, Eye, DollarSign, BarChart3, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Building2, Plus, Eye, IndianRupee, BarChart3, MapPin, Edit, Trash2 } from 'lucide-react';
 import { BillboardForm } from '@/components/BillboardForm';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -144,9 +144,9 @@ export default function OwnerBillboards() {
                     <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span>{billboard.width} × {billboard.height} m</span>
                   </div>
-                  <div className="flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>${billboard.price_per_month}/month</span>
+                  <div className="flex items-center text-sm">
+                    <IndianRupee className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>₹{billboard.price_per_month}/month</span>
                   </div>
                 </div>
                 <div className="space-y-2">
