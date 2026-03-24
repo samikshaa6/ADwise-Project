@@ -81,6 +81,13 @@ serve(async (req) => {
     const maxPrice = Math.max(...billboards.map((b: Billboard) => b.price_per_month), 1);
     const maxImpressions = Math.max(...billboards.map((b: Billboard) => b.daily_impressions || 1), 1);
 
+    // [NEW] ROI Value Density Preprocessing
+    // Calculate raw "Bang for Buck": Area * Impressions / Price
+    const rawROI = billboards.map((b: Billboard) => 
+      ((b.width * b.height * (b.daily_impressions || 1)) / (b.price_per_month || 1))
+    );
+    const maxROI = Math.max(...rawROI, 1);
+
     // Traffic Encoding Map
     const trafficMap: Record<string, number> = { 'high': 1.0, 'medium': 0.6, 'low': 0.3 };
 
@@ -88,22 +95,37 @@ serve(async (req) => {
     // If the user didn't specify a budget/traffic, we assume the median to avoid skewing the model
     const targetPrice = budget ? budget / maxPrice : 0.5;
     const targetTraffic = preferred_traffic ? (trafficMap[preferred_traffic] || 0.6) : 0.6;
+    const targetROI = 1.0; // The ideal user always wants maximum ROI!
     
-    // We heavily weight Price (60%) and Traffic (30%), leaving 10% for pure Impressions
-    const weights = { price: 0.6, traffic: 0.3, impressions: 0.1 };
+    // We weight Price (50%), Traffic (25%), ROI Density (15%), and pure Impressions (10%)
+    const weights = { price: 0.5, traffic: 0.25, roi: 0.15, impressions: 0.1 };
 
     // 3. Score every billboard mathematically computing Euclidean distance
-    const scoredBillboards = billboards.map((b: Billboard) => {
+    const scoredBillboards = billboards.map((b: Billboard, index: number) => {
       // Vectorize the billboard
       const bPrice = b.price_per_month / maxPrice;
       const bTraffic = b.traffic_score ? (trafficMap[b.traffic_score] || 0.6) : 0.6;
       const bImp = (b.daily_impressions || 0) / maxImpressions;
+      const bROI = rawROI[index] / maxROI;
+
+      // [NEW] Asymmetric Budget Penalty calculation
+      let priceDistance = Math.pow((targetPrice - bPrice) * weights.price, 2);
+      
+      // If the customer provided a budget constraint, heavily punish boards that break it
+      if (budget) {
+        if (b.price_per_month > budget) {
+          priceDistance *= 2.8; // 280% penalty scalar for being too expensive
+        } else {
+          priceDistance *= 0.4; // 60% reward scaling for saving them money
+        }
+      }
 
       // Calculate Weighted Euclidean Distance
       const distance = Math.sqrt(
-        Math.pow((targetPrice - bPrice) * weights.price, 2) +
+        priceDistance +
         Math.pow((targetTraffic - bTraffic) * weights.traffic, 2) +
-        Math.pow((1.0 - bImp) * weights.impressions, 2) // Always prefer higher impressions
+        Math.pow((targetROI - bROI) * weights.roi, 2) + // Favor highly efficient cost-to-visual-area ratios
+        Math.pow((1.0 - bImp) * weights.impressions, 2) // Always prefer higher absolute impressions
       );
 
       // Convert topological distance into a 0-100% Match Score

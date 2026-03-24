@@ -40,11 +40,20 @@ const Listings = () => {
 
   const loadBillboards = async () => {
     try {
-      const { data, error } = await supabase
+      const fetchPromise = supabase
         .from('billboards')
         .select('*')
         .eq('is_available', true)
         .order('created_at', { ascending: false });
+
+      const timeoutPromise = new Promise<{data: any, error: any}>((resolve) => {
+        setTimeout(() => resolve({ 
+          data: null, 
+          error: new Error('The database connection timed out or is currently unavailable.') 
+        }), 8000);
+      });
+
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (error) {
         toast({
