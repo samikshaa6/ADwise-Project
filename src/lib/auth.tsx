@@ -38,43 +38,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Forced false to bypass hanging spinner
   const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch profile data
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
           
-          if (profileError) {
-            console.error('Profile fetch error:', profileError);
+          if (session?.user) {
+            // Fetch profile data
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            if (profileError) {
+              console.error('Profile fetch error:', profileError);
+            }
+            
+            setProfile(profileData);
+          } else {
+            setProfile(null);
           }
-          
-          setProfile(profileData);
-        } else {
-          setProfile(null);
+        } catch (err) {
+          console.error('Error in onAuthStateChange:', err);
+        } finally {
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch((err) => {
+        console.error('Error in getSession:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -128,10 +138,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
+    try {
+      await supabase.auth.signOut();
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      window.location.href = '/auth'; // Hard reset to force landing page on /auth
+    }
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {

@@ -40,7 +40,6 @@ export function AppSidebar() {
     { title: "Home Page", url: "/", icon: Map },
     { title: "Listings", url: "/listings", icon: List },
     { title: "My Bookings", url: "/my-bookings", icon: Calendar },
-    { title: "My Campaigns", url: "/campaigns", icon: BarChart3 },
     { title: "Analytics", url: "/analytics", icon: Eye },
   ];
 

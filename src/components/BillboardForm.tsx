@@ -7,19 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { LocationPicker } from '@/components/LocationPicker';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ImagePlus, X } from 'lucide-react';
 
 const billboardSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   location: z.string().min(1, 'Location is required'),
   description: z.string().optional(),
-  width: z.number().min(1, 'Width must be at least 1 meter'),
-  height: z.number().min(1, 'Height must be at least 1 meter'),
-  price_per_month: z.number().min(1, 'Price must be at least ₹1'),
+  category: z.string().min(1, 'Category is required'),
+  width: z.coerce.number().min(1, 'Width must be at least 1 meter'),
+  height: z.coerce.number().min(1, 'Height must be at least 1 meter'),
+  price_per_month: z.coerce.number().min(1, 'Price must be at least ₹1'),
   latitude: z.number(),
   longitude: z.number(),
 });
@@ -36,6 +38,41 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
   const { profile } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [billboardImage, setBillboardImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Reset local state when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setBillboardImage(null);
+      setImagePreview(null);
+    }
+  }, [open]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Error',
+          description: 'Image size must be less than 5MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setBillboardImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setBillboardImage(null);
+    setImagePreview(null);
+  };
   
   const form = useForm<BillboardFormData>({
     resolver: zodResolver(billboardSchema),
@@ -43,6 +80,7 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
       title: '',
       location: '',
       description: '',
+      category: '',
       width: 6,
       height: 3,
       price_per_month: 50000,
@@ -63,9 +101,51 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
       return;
     }
 
+    if (!billboardImage) {
+      toast({
+        title: 'Error',
+        description: 'Please upload an image of the billboard',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      let uploadedImageUrl = null;
+      if (billboardImage) {
+        try {
+          const fileExt = billboardImage.name.split('.').pop();
+          const fileName = `${profile.user_id}/${Date.now()}.${fileExt}`;
+          
+          const uploadPromise = supabase.storage
+            .from('billboard-images')
+            .upload(fileName, billboardImage);
+            
+          const uploadTimeout = new Promise<{data: any, error: any}>((resolve) => {
+            setTimeout(() => resolve({ data: null, error: new Error("Image upload timed out.") }), 8000);
+          });
+
+          const { error: uploadError } = await Promise.race([uploadPromise, uploadTimeout]);
+
+          if (uploadError) {
+            console.error("Storage upload error - proceeding without image:", uploadError);
+            toast({
+               title: "Image Upload Skipped",
+               description: "We couldn't upload your image to the server. Your billboard was created without one.",
+            });
+          } else {
+            const { data: urlData } = supabase.storage
+              .from('billboard-images')
+              .getPublicUrl(fileName);
+            uploadedImageUrl = urlData.publicUrl;
+          }
+        } catch (err) {
+          console.error("Failed to upload image. Storage bucket might be missing:", err);
+        }
+      }
+
       // Fetch traffic data from TomTom API
       const { data: trafficData, error: trafficError } = await supabase.functions.invoke('get-traffic-data', {
         body: { latitude: data.latitude, longitude: data.longitude }
@@ -88,6 +168,7 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
         title: data.title,
         location: data.location,
         description: data.description,
+        category: data.category,
         width: data.width,
         height: data.height,
         price_per_month: data.price_per_month,
@@ -96,6 +177,7 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
         latitude: data.latitude,
         longitude: data.longitude,
         owner_id: profile.user_id,
+        image_url: uploadedImageUrl,
       }]);
 
       if (error) {
@@ -111,6 +193,8 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
           description: `Billboard created with ${trafficScore} traffic score and ~${dailyImpressions.toLocaleString()} daily impressions`,
         });
         form.reset();
+        setBillboardImage(null);
+        setImagePreview(null);
         onOpenChange(false);
         onSuccess?.();
       }
@@ -188,6 +272,73 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="F&B">Food & Beverage (F&B)</SelectItem>
+                      <SelectItem value="Tech">Technology</SelectItem>
+                      <SelectItem value="Travel">Travel</SelectItem>
+                      <SelectItem value="Education">Education</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      <SelectItem value="Real Estate">Real Estate</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Billboard Image Upload */}
+            <div className="space-y-2">
+              <FormLabel>Billboard Image *</FormLabel>
+              {imagePreview ? (
+                <div className="relative w-full max-w-sm">
+                  <img 
+                    src={imagePreview} 
+                    alt="Billboard preview" 
+                    className="w-full h-48 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={removeImage}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <ImagePlus className="w-8 h-8 mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground flex items-center justify-center text-center px-4">
+                      Click to upload an image of the billboard
+                    </p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </label>
+              )}
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -199,7 +350,6 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -217,7 +367,6 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -235,7 +384,6 @@ export function BillboardForm({ open, onOpenChange, onSuccess }: BillboardFormPr
                       <Input 
                         type="number" 
                         {...field} 
-                        onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />

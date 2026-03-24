@@ -20,6 +20,9 @@ interface Billboard {
   is_available: boolean;
   image_url?: string;
   traffic_score: 'low' | 'medium' | 'high';
+  category: string;
+  latitude: number;
+  longitude: number;
 }
 
 const Listings = () => {
@@ -72,13 +75,14 @@ const Listings = () => {
   };
 
   const getTrafficBadge = (score: string) => {
+    const safeScore = score || 'medium';
     const variants = {
       low: 'secondary',
       medium: 'default',
       high: 'default',
       premium: 'default'
     } as const;
-    return <Badge variant={variants[score as keyof typeof variants]}>{score.toUpperCase()}</Badge>;
+    return <Badge variant={variants[safeScore as keyof typeof variants]}>{safeScore.toUpperCase()}</Badge>;
   };
 
   const filteredBillboards = billboards.filter(billboard => {

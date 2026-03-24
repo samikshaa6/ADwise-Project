@@ -10,7 +10,6 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import MapView from "./pages/MapView";
 import Listings from "./pages/Listings";
-import Campaigns from "./pages/Campaigns";
 import Analytics from "./pages/Analytics";
 import Advertiser from "./pages/Advertiser";
 import OwnerBillboards from "./pages/OwnerBillboards";
@@ -32,7 +31,6 @@ const App = () => (
             <Route path="/" element={<Layout><Dashboard /></Layout>} />
             <Route path="/map" element={<Layout><MapView /></Layout>} />
             <Route path="/listings" element={<Layout><Listings /></Layout>} />
-            <Route path="/campaigns" element={<Layout><Campaigns /></Layout>} />
             <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
             <Route path="/advertiser" element={<Layout><Advertiser /></Layout>} />
             <Route path="/owner/billboards" element={<Layout><OwnerBillboards /></Layout>} />

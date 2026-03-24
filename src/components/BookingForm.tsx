@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CategoryCompetitorAlert } from './CategoryCompetitorAlert';
 
 const bookingSchema = z.object({
   start_date: z.date(),
@@ -33,6 +34,9 @@ interface Billboard {
   title: string;
   price_per_month: number;
   location: string;
+  category?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface BookingFormProps {
@@ -58,6 +62,10 @@ export function BookingForm({ open, onOpenChange, billboard, onSuccess }: Bookin
       creative_description: '',
     },
   });
+
+  const selectedCategory = form.watch('noc_category');
+  const selectedStartDate = form.watch('start_date');
+  const selectedEndDate = form.watch('end_date');
 
   // Reset form and state when dialog opens/closes
   React.useEffect(() => {
@@ -126,28 +134,45 @@ export function BookingForm({ open, onOpenChange, billboard, onSuccess }: Bookin
 
     try {
       // Upload creative image
-      const fileExt = creativeImage.name.split('.').pop();
-      const fileName = `${profile.user_id}/${Date.now()}.${fileExt}`;
+      let creativeImageUrl = null;
       
-      const { error: uploadError } = await supabase.storage
-        .from('booking-creatives')
-        .upload(fileName, creativeImage);
+      try {
+        const fileExt = creativeImage.name.split('.').pop();
+        const fileName = `${profile.user_id}/${Date.now()}.${fileExt}`;
+        
+        // Wrap the upload in a Promise.race to forcefully stop hanging uploads
+        const uploadPromise = supabase.storage
+          .from('booking-creatives')
+          .upload(fileName, creativeImage);
+          
+        const uploadTimeout = new Promise<{data: any, error: any}>((resolve) => {
+          setTimeout(() => resolve({ data: null, error: new Error("Upload timed out after 8s.") }), 8000);
+        });
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await Promise.race([uploadPromise, uploadTimeout]);
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('booking-creatives')
-        .getPublicUrl(fileName);
-
-      const creativeImageUrl = urlData.publicUrl;
+        if (uploadError) {
+          console.error("Storage upload error - proceeding without image:", uploadError);
+          toast({
+             title: "Ad Creative Skipped",
+             description: "We couldn't upload your image to the server, but your booking was still submitted.",
+          });
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('booking-creatives')
+            .getPublicUrl(fileName);
+          creativeImageUrl = urlData.publicUrl;
+        }
+      } catch (err) {
+        console.error("Failed to upload image. Storage bucket might be missing:", err);
+      }
 
       // Calculate cost
       const days = Math.ceil((data.end_date.getTime() - data.start_date.getTime()) / (1000 * 60 * 60 * 24));
       const totalCost = Math.round((days / 30) * billboard.price_per_month);
 
       // Create booking with pending status (payment will happen after owner approval)
-      const { error: bookingError } = await supabase.from('bookings').insert({
+      const insertPromise = supabase.from('bookings').insert({
         billboard_id: billboard.id,
         customer_id: profile.user_id,
         start_date: data.start_date.toISOString().split('T')[0],
@@ -162,6 +187,12 @@ export function BookingForm({ open, onOpenChange, billboard, onSuccess }: Bookin
         creative_image_url: creativeImageUrl,
         creative_description: data.creative_description,
       });
+
+      const insertTimeout = new Promise<{error: any}>((resolve) => {
+        setTimeout(() => resolve({ error: new Error("Database insert timed out after 10s.") }), 10000);
+      });
+
+      const { error: bookingError } = await Promise.race([insertPromise, insertTimeout]);
 
       if (bookingError) throw bookingError;
 
@@ -195,6 +226,19 @@ export function BookingForm({ open, onOpenChange, billboard, onSuccess }: Bookin
         <DialogHeader>
           <DialogTitle>Book Billboard: {billboard.title}</DialogTitle>
         </DialogHeader>
+        
+        {billboard.latitude && billboard.longitude ? (
+          <div className="mb-4">
+            <CategoryCompetitorAlert 
+              currentBillboardId={billboard.id}
+              targetCategory={selectedCategory}
+              targetStartDate={selectedStartDate}
+              targetEndDate={selectedEndDate}
+              latitude={billboard.latitude}
+              longitude={billboard.longitude}
+            />
+          </div>
+        ) : null}
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit, (errors) => {

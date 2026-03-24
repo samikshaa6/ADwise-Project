@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       billboards: {
         Row: {
+          category: string | null
           created_at: string
           daily_impressions: number | null
           description: string | null
@@ -34,6 +35,7 @@ export type Database = {
           width: number
         }
         Insert: {
+          category?: string | null
           created_at?: string
           daily_impressions?: number | null
           description?: string | null
@@ -52,6 +54,7 @@ export type Database = {
           width: number
         }
         Update: {
+          category?: string | null
           created_at?: string
           daily_impressions?: number | null
           description?: string | null

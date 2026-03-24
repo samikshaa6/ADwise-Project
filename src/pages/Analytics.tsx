@@ -38,17 +38,9 @@ interface Booking {
   };
 }
 
-interface Campaign {
-  id: string;
-  name: string;
-  budget: number | null;
-  status: string | null;
-}
-
 const Analytics = () => {
   const { profile } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("30d");
 
@@ -56,26 +48,31 @@ const Analytics = () => {
     const loadData = async () => {
       if (!profile) return;
 
-      // Load bookings with billboard data
-      const { data: bookingsData } = await supabase
-        .from("bookings")
-        .select(
-          `
-          *,
-          billboard:billboards(title, location, daily_impressions)
-        `
-        )
-        .eq("customer_id", profile.user_id)
-        .order("created_at", { ascending: false });
-
-      // Load campaigns
-      const { data: campaignsData } = await supabase
-        .from("campaigns")
-        .select("*")
-        .eq("customer_id", profile.user_id);
-
+      let bookingsData: any[] | null = [];
+      if (profile.role === 'owner') {
+        const { data: myBillboards } = await supabase
+          .from('billboards')
+          .select('id')
+          .eq('owner_id', profile.user_id);
+        const billboardIds = myBillboards?.map(b => b.id) || [];
+        
+        if (billboardIds.length > 0) {
+          const { data } = await supabase
+            .from("bookings")
+            .select("*, billboard:billboards(title, location, daily_impressions)")
+            .in("billboard_id", billboardIds)
+            .order("created_at", { ascending: false });
+          bookingsData = data;
+        }
+      } else {
+        const { data } = await supabase
+          .from("bookings")
+          .select("*, billboard:billboards(title, location, daily_impressions)")
+          .eq("customer_id", profile.user_id)
+          .order("created_at", { ascending: false });
+        bookingsData = data;
+      }
       setBookings(bookingsData || []);
-      setCampaigns(campaignsData || []);
       setLoading(false);
     };
 
@@ -146,20 +143,7 @@ const Analytics = () => {
     });
   };
 
-  // Campaign performance
-  const getCampaignPerformance = () => {
-    return campaigns.map((c) => {
-      const campaignBookings = bookings.filter((b) => b.campaign_name === c.name);
-      return {
-        name: c.name,
-        budget: c.budget || 0,
-        spent: campaignBookings
-          .filter((b) => b.payment_status === "completed")
-          .reduce((sum, b) => sum + b.total_cost, 0),
-        bookings: campaignBookings.length,
-      };
-    });
-  };
+
 
   if (loading) {
     return <div className="flex items-center justify-center p-8">Loading...</div>;
@@ -190,7 +174,7 @@ const Analytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
+            <CardTitle className="text-sm font-medium">{profile?.role === 'owner' ? 'Total Revenue' : 'Total Spend'}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -226,12 +210,12 @@ const Analytics = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{campaigns.filter((c) => c.status === "active").length}</div>
-            <p className="text-xs text-muted-foreground">{campaigns.length} total campaigns</p>
+            <div className="text-2xl font-bold">{pendingBookings}</div>
+            <p className="text-xs text-muted-foreground">Action required</p>
           </CardContent>
         </Card>
       </div>
@@ -239,7 +223,6 @@ const Analytics = () => {
       <Tabs defaultValue="performance" className="space-y-6">
         <TabsList>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
@@ -249,8 +232,8 @@ const Analytics = () => {
             {/* Monthly Spend Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Spending</CardTitle>
-                <CardDescription>Your advertising spend over time</CardDescription>
+                <CardTitle>{profile?.role === 'owner' ? 'Monthly Revenue' : 'Monthly Spending'}</CardTitle>
+                <CardDescription>Aggregate financial activity over time</CardDescription>
               </CardHeader>
               <CardContent>
                 {getMonthlyData().length > 0 ? (
@@ -328,43 +311,7 @@ const Analytics = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="campaigns">
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Performance</CardTitle>
-              <CardDescription>Budget utilization by campaign</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {getCampaignPerformance().length > 0 ? (
-                <div className="space-y-4">
-                  {getCampaignPerformance().map((campaign, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{campaign.name}</span>
-                        <span className="text-muted-foreground">
-                          ₹{campaign.spent.toLocaleString()} / ₹{campaign.budget.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${campaign.budget > 0 ? Math.min((campaign.spent / campaign.budget) * 100, 100) : 0}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">{campaign.bookings} bookings</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Campaigns Yet</h3>
-                  <p className="text-muted-foreground">Create campaigns to track their performance</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+
 
         <TabsContent value="locations">
           <Card>

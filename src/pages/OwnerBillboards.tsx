@@ -76,12 +76,13 @@ export default function OwnerBillboards() {
   };
 
   const getTrafficBadge = (score: string) => {
+    const safeScore = score || 'medium';
     const variants = {
       low: 'destructive' as const,
       medium: 'secondary' as const,
       high: 'default' as const,
     };
-    return <Badge variant={variants[score as keyof typeof variants]}>{score.toUpperCase()}</Badge>;
+    return <Badge variant={variants[safeScore as keyof typeof variants]}>{safeScore.toUpperCase()}</Badge>;
   };
 
   if (loading) {

@@ -12,8 +12,6 @@ interface DashboardStats {
   totalBillboards?: number;
   totalBookings?: number;
   totalRevenue?: number;
-  totalCampaigns?: number;
-  activeCampaigns?: number;
   totalSpent?: number;
 }
 
@@ -65,11 +63,6 @@ const Dashboard = () => {
       setRecentActivity((bookings || []).slice(0, 5));
     } else {
       // Load customer dashboard data
-      const { data: campaigns } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('customer_id', profile.user_id);
-
       const { data: bookings } = await supabase
         .from('bookings')
         .select('*, billboard:billboards(*)')
@@ -78,13 +71,8 @@ const Dashboard = () => {
       const totalSpent = (bookings || []).reduce((sum, booking) => 
         sum + Number(booking.total_cost), 0
       );
-      const activeCampaigns = (bookings || []).filter(b => 
-        new Date(b.end_date) > new Date() && new Date(b.start_date) <= new Date()
-      ).length;
 
       setStats({
-        totalCampaigns: campaigns?.length || 0,
-        activeCampaigns,
         totalBookings: (bookings || []).length,
         totalSpent
       });
@@ -183,35 +171,17 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Advertiser Dashboard</h1>
-          <p className="text-muted-foreground">Manage your advertising campaigns and bookings</p>
+          <p className="text-muted-foreground">Manage your billboard bookings</p>
         </div>
-        <Button onClick={() => navigate('/campaigns')}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Campaign
-        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Campaigns"
-          value={stats.totalCampaigns}
-          description="All campaigns created"
-          icon={Calendar}
-          onClick={() => navigate('/campaigns')}
-        />
-        <StatCard
-          title="Active Campaigns"
-          value={stats.activeCampaigns}
-          description="Currently running"
-          icon={TrendingUp}
-          onClick={() => navigate('/campaigns')}
-        />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
         <StatCard
           title="Total Bookings"
           value={stats.totalBookings}
           description="Billboard reservations"
           icon={MapPin}
-          onClick={() => navigate('/campaigns')}
+          onClick={() => navigate('/my-bookings')}
         />
         <StatCard
           title="Total Spent"
